@@ -16,8 +16,10 @@ Keep it short; bullets are fine.
 <!-- Structure, state management, where filtering happens, what you tested and
      what you didn't, any library you added and why. -->
 
-- **Structure:** Car code in `features/cars/`, The app
-  shell (header, `<main>`) is a layout route in `app/`.
+- **Types without codegen:** written by hand from `schema.graphql` and attached
+  with `TypedDocumentNode`, so `useQuery` infers its data. Worth if the schema grew, i would add codegen.
+- **The mock omits `__typename`:** fragments don't match and Apollo can't
+  normalise cars by id, so each query lists its fields inline.
 
 ## If I had another day
 
