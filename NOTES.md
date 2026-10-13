@@ -16,6 +16,9 @@ Keep it short; bullets are fine.
 <!-- Structure, state management, where filtering happens, what you tested and
      what you didn't, any library you added and why. -->
 
+- **Structure:** Car code in `features/cars/`, The app
+  shell (header, `<main>`) is a layout route in `app/`.
+
 ## If I had another day
 
 <!-- What you would do next, in priority order. -->
