@@ -1,5 +1,5 @@
 import { useQuery } from "@apollo/client";
-import { GET_CARS } from "../api/getCars";
+import { GET_CARS } from "@/features/cars/api/getCars";
 
 export const useCars = () => {
   const { data, loading, error, refetch } = useQuery(GET_CARS);

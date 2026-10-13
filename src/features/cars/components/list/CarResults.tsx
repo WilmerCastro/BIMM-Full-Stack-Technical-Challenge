@@ -1,6 +1,6 @@
 import { Alert, Box, Button, CircularProgress } from "@mui/material";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { useCars } from "../hooks/useCars";
+import { useCars } from "@/features/cars/hooks/useCars";
 import { CarList } from "./CarList";
 
 export const CarResults = () => {

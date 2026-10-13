@@ -1,5 +1,5 @@
 import { gql, type TypedDocumentNode } from "@apollo/client";
-import type { Car } from "../types/car";
+import type { Car } from "@/features/cars/types/car";
 
 export type GetCarsData = { cars: Car[] };
 

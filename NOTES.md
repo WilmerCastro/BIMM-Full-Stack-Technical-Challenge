@@ -11,6 +11,9 @@ Keep it short; bullets are fine.
 
 <!-- Scope you consciously cut. Naming a trade-off reads better than silence. -->
 
+- **Image URLs in the form:** new cars get placeholder images. The mock leaves
+  out images it isn't sent, and Apollo's cache expects them.
+
 ## Decisions and trade-offs
 
 <!-- Structure, state management, where filtering happens, what you tested and
@@ -20,6 +23,8 @@ Keep it short; bullets are fine.
   with `TypedDocumentNode`, so `useQuery` infers its data. Worth if the schema grew, i would add codegen.
 - **The mock omits `__typename`:** fragments don't match and Apollo can't
   normalise cars by id, so each query lists its fields inline.
+- **Cache update after create:** the mutation already returns the new car, so
+  I append it to the cached list with `cache.modify` instead of refetching.
 
 ## If I had another day
 

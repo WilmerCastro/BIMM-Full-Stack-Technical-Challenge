@@ -1,5 +1,5 @@
 import { Box } from "@mui/material";
-import type { Car } from "../types/car";
+import type { Car } from "@/features/cars/types/car";
 import { CarCard } from "./CarCard";
 
 type CarListProps = {
