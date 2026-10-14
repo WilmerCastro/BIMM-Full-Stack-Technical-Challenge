@@ -134,3 +134,98 @@ describe("CarsPage – adding a car", () => {
     expect(screen.queryByText("Ford Mustang")).not.toBeInTheDocument();
   });
 });
+
+describe("CarsPage – searching and sorting", () => {
+  const carNames = () =>
+    screen
+      .getAllByRole("heading", { level: 2 })
+      .map((heading) => heading.textContent);
+
+  const searchBox = () =>
+    screen.getByRole("searchbox", { name: "Search by model" });
+
+  const trackGetCarsRequests = () => {
+    const requests: unknown[] = [];
+    server.use(
+      graphql.query("GetCars", ({ variables }) => {
+        requests.push(variables);
+      })
+    );
+    return requests;
+  };
+
+  const afterDebounce = { timeout: 2000 };
+
+  it("applies the filters in the URL on load", async () => {
+    renderWithProviders(<CarsPage />, { route: "/?model=q&sort=model-asc" });
+
+    expect(
+      await screen.findByRole("heading", { name: "Audi Q3" })
+    ).toBeInTheDocument();
+    expect(carNames()).toEqual(["Audi Q3", "Audi Q5"]);
+    expect(searchBox()).toHaveValue("q");
+  });
+
+  it("waits for the user to stop typing before searching", async () => {
+    const requests = trackGetCarsRequests();
+    const user = userEvent.setup();
+    renderWithProviders(<CarsPage />);
+    await screen.findByRole("heading", { name: "Audi Q5" });
+
+    await user.type(searchBox(), "q5");
+
+    await waitFor(() => expect(carNames()).toEqual(["Audi Q5"]), afterDebounce);
+    expect(requests).toEqual([{}, { model: "q5" }]);
+  });
+
+  it("explains an empty search and lets the user clear it", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<CarsPage />, { route: "/?model=zzz" });
+
+    expect(
+      await screen.findByText("No cars match your filters")
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Clear filters" }));
+
+    await waitFor(
+      () => expect(screen.getAllByRole("listitem")).toHaveLength(6),
+      afterDebounce
+    );
+    expect(searchBox()).toHaveValue("");
+  });
+
+  it("filters by year", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<CarsPage />);
+    await screen.findByRole("heading", { name: "Audi Q5" });
+
+    await user.type(screen.getByRole("spinbutton", { name: "Year" }), "2024");
+
+    await waitFor(
+      () => expect(carNames()).toEqual(["Audi R8", "Audi Q3"]),
+      afterDebounce
+    );
+  });
+
+  it("re-sorts the list without asking the API again", async () => {
+    const requests = trackGetCarsRequests();
+    const user = userEvent.setup();
+    renderWithProviders(<CarsPage />);
+    await screen.findByRole("heading", { name: "Audi Q5" });
+    expect(carNames()[0]).toBe("Audi e-tron GT");
+
+    await user.click(screen.getByRole("combobox", { name: "Sort by" }));
+    await user.click(screen.getByRole("option", { name: "Model A–Z" }));
+
+    expect(carNames()).toEqual([
+      "Audi A3",
+      "Audi A6",
+      "Audi e-tron GT",
+      "Audi Q3",
+      "Audi Q5",
+      "Audi R8",
+    ]);
+    expect(requests).toHaveLength(1);
+  });
+});

@@ -24,7 +24,10 @@ Keep it short; bullets are fine.
 - **The mock omits `__typename`:** fragments don't match and Apollo can't
   normalise cars by id, so each query lists its fields inline.
 - **Cache update after create:** the mutation already returns the new car, so
-  I append it to the cached list with `cache.modify` instead of refetching.
+  I add it to the cached full list. Filtered results are evicted and refetched.
+- **Filter server-side, sort client-side:** the API has no sort argument.
+- **Filters live in the URL** with `useSearchParams`, so they can work with reloads
+  and the back button. `nuqs `would be worth it with more params; for this test wasn't.
 
 ## If I had another day
 

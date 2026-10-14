@@ -15,21 +15,27 @@ import { createApolloClient } from "@/lib/apollo";
  * real Apollo client against the mock API. For unit tests of presentational
  * components, plain `render` from RTL is fine.
  */
-const createProviders = () => {
+type ProviderOptions = {
+  route?: string;
+};
+
+const createProviders = ({ route = "/" }: ProviderOptions = {}) => {
   const client = createApolloClient();
   return ({ children }: { children: ReactNode }) => (
     <ApolloProvider client={client}>
-      <MemoryRouter>{children}</MemoryRouter>
+      <MemoryRouter initialEntries={[route]}>{children}</MemoryRouter>
     </ApolloProvider>
   );
 };
 
 export const renderWithProviders = (
   ui: ReactElement,
-  options?: Omit<RenderOptions, "wrapper">
-) => render(ui, { wrapper: createProviders(), ...options });
+  { route, ...options }: Omit<RenderOptions, "wrapper"> & ProviderOptions = {}
+) => render(ui, { wrapper: createProviders({ route }), ...options });
 
-export const renderHookWithProviders = <Result,>(hook: () => Result) =>
-  renderHook(hook, { wrapper: createProviders() });
+export const renderHookWithProviders = <Result,>(
+  hook: () => Result,
+  options: ProviderOptions = {}
+) => renderHook(hook, { wrapper: createProviders(options) });
 
 export * from "@testing-library/react";

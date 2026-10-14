@@ -1,6 +1,7 @@
 import { useMutation, type ApolloError } from "@apollo/client";
 import { CREATE_CAR } from "@/features/cars/api/createCar";
-import type { Car, CreateCarInput } from "@/features/cars/types/car";
+import { GET_CARS } from "@/features/cars/api/getCars";
+import type { CreateCarInput } from "@/features/cars/types/car";
 
 const PLACEHOLDER_IMAGES = {
   mobile: "/images/placeholder-mobile.svg",
@@ -11,7 +12,7 @@ const PLACEHOLDER_IMAGES = {
 const toErrorMessage = (error?: ApolloError) => {
   if (!error) return undefined;
   const invalid = error.graphQLErrors.find(
-    (graphQLError) => graphQLError.extensions?.code === "BAD_USER_INPUT"
+    (graphQLError) => graphQLError.extensions?.code === "BAD_USER_INPUT",
   );
   return invalid
     ? `The car was rejected: ${invalid.message}.`
@@ -24,11 +25,15 @@ export const useCreateCar = () => {
       const created = data?.createCar;
       if (!created) return;
 
-      cache.modify<{ cars: Car[] }>({
-        fields: {
-          cars: (existing = []) => [...existing, created],
-        },
-      });
+      const allCars = cache.readQuery({ query: GET_CARS });
+      cache.evict({ fieldName: "cars" });
+
+      if (allCars) {
+        cache.writeQuery({
+          query: GET_CARS,
+          data: { cars: [...allCars.cars, created] },
+        });
+      }
     },
   });
 

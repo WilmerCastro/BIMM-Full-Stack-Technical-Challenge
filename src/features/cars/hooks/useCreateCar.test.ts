@@ -9,20 +9,25 @@ import {
 import { useCars } from "./useCars";
 import { useCreateCar } from "./useCreateCar";
 
-const newCar = { make: "Ford", model: "Mustang", year: 1967, color: "Red" };
+const newCar = { make: "Audi", model: "Q7", year: 2020, color: "Red" };
 
-const renderCarsAndCreate = () =>
-  renderHookWithProviders(() => ({ list: useCars(), create: useCreateCar() }));
+const countGetCarsRequests = () => {
+  const requests: unknown[] = [];
+  server.use(
+    graphql.query("GetCars", ({ variables }) => {
+      requests.push(variables);
+    })
+  );
+  return requests;
+};
 
 describe("useCreateCar", () => {
-  it("adds the created car to the cached list without refetching it", async () => {
-    let getCarsRequests = 0;
-    server.use(
-      graphql.query("GetCars", () => {
-        getCarsRequests += 1;
-      })
-    );
-    const { result } = renderCarsAndCreate();
+  it("adds the car to the full list without refetching it", async () => {
+    const requests = countGetCarsRequests();
+    const { result } = renderHookWithProviders(() => ({
+      list: useCars({ sort: "year-desc" }),
+      create: useCreateCar(),
+    }));
     await waitFor(() => expect(result.current.list.loading).toBe(false));
 
     let created = false;
@@ -32,11 +37,35 @@ describe("useCreateCar", () => {
 
     expect(created).toBe(true);
     expect(result.current.list.cars).toHaveLength(seedCars.length + 1);
-    expect(result.current.list.cars[seedCars.length]).toMatchObject({
-      ...newCar,
-      mobile: "/images/placeholder-mobile.svg",
+    expect(
+      result.current.list.cars.find((car) => car.model === "Q7")
+    ).toMatchObject({ ...newCar, mobile: "/images/placeholder-mobile.svg" });
+    expect(requests).toHaveLength(1);
+  });
+
+  it("lets the API decide whether the car belongs in a filtered list", async () => {
+    const requests = countGetCarsRequests();
+    const { result } = renderHookWithProviders(() => ({
+      all: useCars({ sort: "model-asc" }),
+      searchQ: useCars({ model: "q", sort: "model-asc" }),
+      create: useCreateCar(),
+    }));
+    await waitFor(() => expect(result.current.searchQ.loading).toBe(false));
+    expect(requests).toEqual([{}, { model: "q" }]);
+
+    await act(async () => {
+      await result.current.create.createCar(newCar);
     });
-    expect(getCarsRequests).toBe(1);
+
+    await waitFor(() =>
+      expect(result.current.searchQ.cars.map((car) => car.model)).toEqual([
+        "Q3",
+        "Q5",
+        "Q7",
+      ])
+    );
+    expect(result.current.all.cars).toHaveLength(seedCars.length + 1);
+    expect(requests).toEqual([{}, { model: "q" }, { model: "q" }]);
   });
 
   it("reports a validation error from the API", async () => {
@@ -52,15 +81,15 @@ describe("useCreateCar", () => {
         })
       )
     );
-    const { result } = renderCarsAndCreate();
+    const { result } = renderHookWithProviders(() => useCreateCar());
 
     let created = true;
     await act(async () => {
-      created = await result.current.create.createCar(newCar);
+      created = await result.current.createCar(newCar);
     });
 
     expect(created).toBe(false);
-    expect(result.current.create.errorMessage).toBe(
+    expect(result.current.errorMessage).toBe(
       "The car was rejected: make and model are required."
     );
   });
