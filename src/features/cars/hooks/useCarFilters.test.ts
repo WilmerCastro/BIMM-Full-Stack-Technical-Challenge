@@ -1,4 +1,4 @@
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigationType } from "react-router-dom";
 import {
   act,
   renderHookWithProviders,
@@ -8,7 +8,11 @@ import { useCarFilters } from "./useCarFilters";
 
 const renderFilters = (route: string) =>
   renderHookWithProviders(
-    () => ({ ...useCarFilters(), search: useLocation().search }),
+    () => ({
+      ...useCarFilters(),
+      search: useLocation().search,
+      navigationType: useNavigationType(),
+    }),
     { route }
   );
 
@@ -45,10 +49,17 @@ describe("useCarFilters", () => {
 
     act(() => result.current.setFilter("model", "q5"));
 
-    expect(result.current.filters.model).toBe("q5");
     expect(result.current.search).toBe("?model=q5");
     expect(result.current.query.model).toBeUndefined();
     await waitFor(() => expect(result.current.query.model).toBe("q5"));
+  });
+
+  it("replaces the history entry instead of adding one per keystroke", () => {
+    const { result } = renderFilters("/");
+
+    act(() => result.current.setFilter("model", "q"));
+
+    expect(result.current.navigationType).toBe("REPLACE");
   });
 
   it("clears model and year but keeps the sort", () => {

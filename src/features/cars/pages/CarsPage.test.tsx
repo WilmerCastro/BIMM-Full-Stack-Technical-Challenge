@@ -178,6 +178,17 @@ describe("CarsPage – searching and sorting", () => {
     expect(requests).toEqual([{}, { model: "q5" }]);
   });
 
+  it("keeps the current cars on screen while a new search loads", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<CarsPage />);
+    await screen.findByRole("heading", { name: "Audi Q5" });
+
+    await user.type(searchBox(), "q");
+
+    await screen.findByRole("progressbar", { name: "Updating cars" });
+    expect(screen.getAllByRole("listitem")).toHaveLength(6);
+  });
+
   it("explains an empty search and lets the user clear it", async () => {
     const user = userEvent.setup();
     renderWithProviders(<CarsPage />, { route: "/?model=zzz" });
